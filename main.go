@@ -1,7 +1,18 @@
 package main
 
 import (
+	"bufio"
+	"flag"
+	"io"
+	"log"
 	"math"
+	"os"
+	"strings"
+)
+
+var (
+	input_file = flag.String("input", "", "Input file with transactions")
+	output_dir = flag.String("output", "", "A dir to store created clusters to")
 )
 
 type Cluster struct {
@@ -21,6 +32,10 @@ type Transaction struct {
 
 func getProfit(s, w, r float64) float64 {
 	return s / math.Pow(w, r)
+}
+
+func newCluster(id int) *Cluster {
+	return &Cluster{id: id, n: 0, w: 0, s: 0, instances: make(map[string]bool, 0), occ: make(map[string]int, 0)}
 }
 
 func (c *Cluster) addItem(item string) {
@@ -81,6 +96,7 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 }
 
 func clusterize(data []*Transaction, repulsion float64) []*Cluster {
+	log.Print(data)
 	if repulsion == 0 {
 		repulsion = 4.0 // default value
 	}
@@ -88,7 +104,7 @@ func clusterize(data []*Transaction, repulsion float64) []*Cluster {
 	for _, transaction := range data {
 		clusters = addTransactionToBestCluster(clusters, transaction, repulsion)
 	}
-
+	log.Print(clusters)
 	for {
 		moved := false
 		for _, transaction := range data {
@@ -103,6 +119,7 @@ func clusterize(data []*Transaction, repulsion float64) []*Cluster {
 			break
 		}
 	}
+	log.Printf("Finished %v", clusters)
 	return clusters
 }
 
@@ -111,19 +128,57 @@ func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, 
 		tempS := float64(len(transaction.items))
 		tempW := tempS
 		profitMax := getProfit(tempS, tempW, repulsion)
+		log.Printf("Profit max %f", profitMax)
 		for _, cluster := range clusters {
-			if cluster.getProfit(transaction.items, repulsion) > profitMax {
+			clusterProfit := cluster.getProfit(transaction.items, repulsion)
+			log.Printf("Cluster profit %f", clusterProfit)
+			if clusterProfit >= profitMax {
 				cluster.addTransaction(transaction)
 				return clusters
 			}
 		}
 	}
 
-	cluster := Cluster{id: len(clusters)}
+	cluster := newCluster(len(clusters))
 	cluster.addTransaction(transaction)
-	return append(clusters, &cluster)
+	return append(clusters, cluster)
 }
 
 func main() {
+	flag.Parse()
+	if *input_file == "" {
+		log.Fatal("You must provide input file")
+	}
+	// if output_dir == ""{
+	// 	log.Fail("You must provide output dir")
+	// }
+	file, err := os.Open(*input_file)
+	if err != nil {
+		log.Fatalf("Cannot open config file at [%s]: [%s]\n", *input_file, err)
+	}
+	defer file.Close()
+	r := bufio.NewReader(file)
+	var transactions []*Transaction
+	for {
+		line, err := r.ReadString('\n')
+
+		if err != nil && line == "" {
+			if err == io.EOF {
+				break
+			}
+			log.Fatalf("Error when reading file [%s]: [%s]\n", *input_file, err)
+		}
+		instance := strings.TrimSuffix(line, "\n")
+		items := make([]string, 0)
+		visited := make(map[string]bool)
+		for _, item := range strings.Split(instance, " ") {
+			if _, found := visited[item]; !found {
+				items = append(items, item)
+				visited[item] = true
+			}
+		}
+		transactions = append(transactions, &Transaction{instance: instance, items: items})
+	}
+	clusterize(transactions, 4.0)
 
 }
