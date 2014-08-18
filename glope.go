@@ -1,20 +1,8 @@
-package main
+package glope
 
 import (
-	"bufio"
-	"flag"
-	"fmt"
-	"io"
 	"log"
 	"math"
-	"os"
-	"strings"
-)
-
-var (
-	input_file = flag.String("input", "", "Input file with transactions")
-	output_dir = flag.String("output", "", "A dir to store created clusters to")
-	repulsion  = flag.Float64("repulsion", 4.0, "Repulsion of transactions, the higher, the more precise")
 )
 
 type Cluster struct {
@@ -102,16 +90,15 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 }
 
 func clusterize(data []*Transaction, repulsion float64) []*Cluster {
-
 	if repulsion == 0 {
 		repulsion = 4.0 // default value
 	}
 	var clusters []*Cluster
-	log.Print("Initializing")
+	log.Print("Initializing clusters")
 	for _, transaction := range data {
 		clusters = addTransactionToBestCluster(clusters, transaction, repulsion)
 	}
-	log.Print("Start moving")
+	log.Print("Moving transactions to best clusters")
 	for {
 		moved := false
 		for _, transaction := range data {
@@ -155,53 +142,4 @@ func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, 
 	cluster := newCluster(len(clusters))
 	cluster.addTransaction(transaction)
 	return append(clusters, cluster)
-}
-
-func main() {
-	flag.Parse()
-	if *input_file == "" {
-		log.Fatal("You must provide input file")
-	}
-	if *output_dir == "" {
-		log.Fatal("You must provide output dir")
-	}
-	file, err := os.Open(*input_file)
-	if err != nil {
-		log.Fatalf("Cannot open transaction file at [%s]: [%s]\n", *input_file, err)
-	}
-	defer file.Close()
-	r := bufio.NewReader(file)
-	var transactions []*Transaction
-	for {
-		line, err := r.ReadString('\n')
-		if err != nil && line == "" {
-			if err == io.EOF {
-				break
-			}
-			log.Fatalf("Error when reading file [%s]: [%s]\n", *input_file, err)
-		}
-		parts := strings.Split(strings.TrimSuffix(line, "\n"), ";")
-		instance := strings.Replace(parts[1], "\"", "", -1)
-		items := make([]string, 0)
-		visited := make(map[string]bool)
-		for _, item := range strings.Split(instance, " ") {
-			if _, found := visited[item]; !found {
-				items = append(items, item)
-				visited[item] = true
-			}
-		}
-		transactions = append(transactions, &Transaction{instance: instance, items: items})
-	}
-	for _, cluster := range clusterize(transactions, *repulsion) {
-		file, err := os.Create(fmt.Sprintf("%s/cluster_%d.txt", *output_dir, cluster.id))
-		if err != nil {
-			log.Fatalf("Cannot open cluster file at [%s]: [%s]\n", *input_file, err)
-		}
-		for _, instance := range cluster.instances {
-			if instance != nil{
-				file.WriteString(fmt.Sprintf("%s\n", *instance))
-			}
-		}
-		file.Close()
-	}
 }
