@@ -6,19 +6,19 @@ import (
 )
 
 type Cluster struct {
-	id        int
-	n         float64
-	w         float64
-	s         float64
-	instances []*string
-	occ       map[string]int
+	id           int
+	n            float64
+	w            float64
+	s            float64
+	occ          map[string]int
+	Transactions []*Transaction
 }
 
 type Transaction struct {
-	cluster  *Cluster
-	instanceId int
-	instance string
-	items    []string
+	cluster         *Cluster
+	clusterPosition int
+	Instance        interface{}
+	Items           []string
 }
 
 func getProfit(s, w, r float64) float64 {
@@ -26,7 +26,7 @@ func getProfit(s, w, r float64) float64 {
 }
 
 func newCluster(id int) *Cluster {
-	return &Cluster{id: id, n: 0, w: 0, s: 0, instances: make([]*string, 0), occ: make(map[string]int, 0)}
+	return &Cluster{id: id, n: 0, w: 0, s: 0, Transactions: make([]*Transaction, 0), occ: make(map[string]int, 0)}
 }
 
 func (c *Cluster) getProfit(items []string, r float64) float64 {
@@ -69,27 +69,37 @@ func (c *Cluster) removeItem(item string) {
 }
 
 func (c *Cluster) addTransaction(trans *Transaction) {
-	for _, item := range trans.items {
+	for _, item := range trans.Items {
 		c.addItem(item)
 	}
 	c.w = float64(len(c.occ))
 	c.n++
-	c.instances = append(c.instances, &trans.instance)
+	trans.clusterPosition = len(c.Transactions)
+	c.Transactions = append(c.Transactions, trans)
 	trans.cluster = c
-	trans.instanceId = len(c.instances) - 1
 }
 
 func (c *Cluster) removeTransaction(trans *Transaction) {
-	for _, item := range trans.items {
+	for _, item := range trans.Items {
 		c.removeItem(item)
 	}
 	c.w = float64(len(c.occ))
 	c.n--
 	trans.cluster = nil
-	c.instances[trans.instanceId] = nil
+	c.Transactions[trans.clusterPosition] = nil
 }
 
-func clusterize(data []*Transaction, repulsion float64) []*Cluster {
+func (c *Cluster) clearNilTransactions(){
+	nonNilTransactions := make([]*Transaction, 0)
+	for _, transaction := range(c.Transactions){
+		if transaction != nil{
+			nonNilTransactions = append(nonNilTransactions, transaction)
+		}
+	}
+	c.Transactions = nonNilTransactions
+}
+
+func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 	if repulsion == 0 {
 		repulsion = 4.0 // default value
 	}
@@ -98,6 +108,7 @@ func clusterize(data []*Transaction, repulsion float64) []*Cluster {
 	for _, transaction := range data {
 		clusters = addTransactionToBestCluster(clusters, transaction, repulsion)
 	}
+	log.Printf("Init finished, created %d clusters", len(clusters))
 	log.Print("Moving transactions to best clusters")
 	for {
 		moved := false
@@ -113,13 +124,21 @@ func clusterize(data []*Transaction, repulsion float64) []*Cluster {
 			break
 		}
 	}
-	log.Printf("Finished")
-	return clusters
+	log.Print("Finished, cleaning empty clusters")
+	notEmptyClusters := make([]*Cluster, 0)
+	for _, cluster := range clusters{
+		if cluster.n > 0{
+			cluster.clearNilTransactions()
+			notEmptyClusters = append(notEmptyClusters, cluster)
+		}
+	}
+	log.Printf("Cleaning finished, returning %d clusters", len(notEmptyClusters))
+	return notEmptyClusters
 }
 
 func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, repulsion float64) []*Cluster {
 	if len(clusters) > 0 {
-		tempS := float64(len(transaction.items))
+		tempS := float64(len(transaction.Items))
 		tempW := tempS
 		profitMax := getProfit(tempS, tempW, repulsion)
 
@@ -127,7 +146,7 @@ func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, 
 		var bestProfit float64
 
 		for _, cluster := range clusters {
-			clusterProfit := cluster.getProfit(transaction.items, repulsion)
+			clusterProfit := cluster.getProfit(transaction.Items, repulsion)
 			if clusterProfit > bestProfit {
 				bestCluster = cluster
 				bestProfit = clusterProfit
