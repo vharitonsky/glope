@@ -7,16 +7,16 @@ import (
 
 type Cluster struct {
 	id           int
-	n            float64
-	w            float64
-	s            float64
-	occ          map[string]int
+	n            float64 //Number of transactions
+	w            float64 //Number of unique items
+	s            float64 //Total number of items
+	occ          map[string]int //Item to item count map
 	Transactions []*Transaction
 }
 
 type Transaction struct {
 	cluster         *Cluster
-	clusterPosition int
+	clusterPosition int //Position of transaction inside cluster
 	Instance        interface{}
 	Items           []string
 }
@@ -110,7 +110,8 @@ func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 	}
 	log.Printf("Init finished, created %d clusters", len(clusters))
 	log.Print("Moving transactions to best clusters")
-	for {
+	for i:=1;;i++{
+		log.Printf("move %d",i)
 		moved := false
 		for _, transaction := range data {
 			originalClusterId := transaction.cluster.id
@@ -150,6 +151,10 @@ func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, 
 			if clusterProfit > bestProfit {
 				bestCluster = cluster
 				bestProfit = clusterProfit
+			}
+			if clusterProfit > profitMax{
+				cluster.addTransaction(transaction)
+				return clusters
 			}
 		}
 		if bestProfit >= profitMax {
