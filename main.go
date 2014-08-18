@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"math"
@@ -149,12 +150,12 @@ func main() {
 	if *input_file == "" {
 		log.Fatal("You must provide input file")
 	}
-	// if output_dir == ""{
-	// 	log.Fail("You must provide output dir")
-	// }
+	if *output_dir == "" {
+		log.Fatal("You must provide output dir")
+	}
 	file, err := os.Open(*input_file)
 	if err != nil {
-		log.Fatalf("Cannot open config file at [%s]: [%s]\n", *input_file, err)
+		log.Fatalf("Cannot open transaction file at [%s]: [%s]\n", *input_file, err)
 	}
 	defer file.Close()
 	r := bufio.NewReader(file)
@@ -179,6 +180,14 @@ func main() {
 		}
 		transactions = append(transactions, &Transaction{instance: instance, items: items})
 	}
-	clusterize(transactions, 4.0)
-
+	for _, cluster := range clusterize(transactions, 4.0) {
+		file, err := os.Create(fmt.Sprintf("%s/cluster_%d.txt", *output_dir, cluster.id))
+		if err != nil {
+			log.Fatalf("Cannot open cluster file at [%s]: [%s]\n", *input_file, err)
+		}
+		for instance, _ := range cluster.instances {
+			file.WriteString(fmt.Sprintf("%s\n", instance))
+		}
+		file.Close()
+	}
 }
