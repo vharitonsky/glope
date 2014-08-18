@@ -21,7 +21,7 @@ type Cluster struct {
 	n         float64
 	w         float64
 	s         float64
-	instances map[string]bool
+	instances []string
 	occ       map[string]int
 }
 
@@ -31,21 +31,25 @@ type Transaction struct {
 	items    []string
 }
 
+func remove(array []string, item string) []string {
+	var modifiedArray []string
+	for i, arrayItem := range array {
+		if arrayItem != item {
+			modifiedArray = append(modifiedArray, arrayItem)
+		} else {
+			modifiedArray = append(modifiedArray, array[i+1:]...)
+			break
+		}
+	}
+	return modifiedArray
+}
+
 func getProfit(s, w, r float64) float64 {
 	return s / math.Pow(w, r)
 }
 
 func newCluster(id int) *Cluster {
-	return &Cluster{id: id, n: 0, w: 0, s: 0, instances: make(map[string]bool, 0), occ: make(map[string]int, 0)}
-}
-
-func (c *Cluster) addItem(item string) {
-	val, found := c.occ[item]
-	if !found {
-		c.occ[item] = 1
-	} else {
-		c.occ[item] = val + 1
-	}
+	return &Cluster{id: id, n: 0, w: 0, s: 0, instances: make([]string, 0), occ: make(map[string]int, 0)}
 }
 
 func (c *Cluster) getProfit(items []string, r float64) float64 {
@@ -65,6 +69,16 @@ func (c *Cluster) getProfit(items []string, r float64) float64 {
 	}
 }
 
+func (c *Cluster) addItem(item string) {
+	val, found := c.occ[item]
+	if !found {
+		c.occ[item] = 1
+	} else {
+		c.occ[item] = val + 1
+	}
+	c.s++
+}
+
 func (c *Cluster) removeItem(item string) {
 	val, found := c.occ[item]
 	if !found {
@@ -74,6 +88,7 @@ func (c *Cluster) removeItem(item string) {
 		delete(c.occ, item)
 	}
 	c.occ[item] -= 1
+	c.s--
 }
 
 func (c *Cluster) addTransaction(trans *Transaction) {
@@ -82,7 +97,7 @@ func (c *Cluster) addTransaction(trans *Transaction) {
 	}
 	c.w = float64(len(c.occ))
 	c.n++
-	c.instances[trans.instance] = true
+	c.instances = append(c.instances, trans.instance)
 	trans.cluster = c
 }
 
@@ -91,8 +106,9 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 		c.removeItem(item)
 	}
 	c.w = float64(len(c.occ))
+	log.Print(len(c.occ))
 	c.n--
-	delete(c.instances, trans.instance)
+	c.instances = remove(c.instances, trans.instance)
 	trans.cluster = nil
 }
 
@@ -105,7 +121,7 @@ func clusterize(data []*Transaction, repulsion float64) []*Cluster {
 	for _, transaction := range data {
 		clusters = addTransactionToBestCluster(clusters, transaction, repulsion)
 	}
-	log.Print(clusters)
+	log.Print("Start moving")
 	for {
 		moved := false
 		for _, transaction := range data {
@@ -185,7 +201,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Cannot open cluster file at [%s]: [%s]\n", *input_file, err)
 		}
-		for instance, _ := range cluster.instances {
+		for _, instance := range cluster.instances {
 			file.WriteString(fmt.Sprintf("%s\n", instance))
 		}
 		file.Close()
