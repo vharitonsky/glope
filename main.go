@@ -106,18 +106,18 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 		c.removeItem(item)
 	}
 	c.w = float64(len(c.occ))
-	log.Print(len(c.occ))
 	c.n--
 	c.instances = remove(c.instances, trans.instance)
 	trans.cluster = nil
 }
 
 func clusterize(data []*Transaction, repulsion float64) []*Cluster {
-	log.Print(data)
+
 	if repulsion == 0 {
 		repulsion = 4.0 // default value
 	}
 	var clusters []*Cluster
+	log.Print("Initializing")
 	for _, transaction := range data {
 		clusters = addTransactionToBestCluster(clusters, transaction, repulsion)
 	}
@@ -145,14 +145,20 @@ func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, 
 		tempS := float64(len(transaction.items))
 		tempW := tempS
 		profitMax := getProfit(tempS, tempW, repulsion)
-		log.Printf("Profit max %f", profitMax)
+
+		var bestCluster *Cluster
+		var bestProfit float64
+
 		for _, cluster := range clusters {
 			clusterProfit := cluster.getProfit(transaction.items, repulsion)
-			log.Printf("Cluster profit %f", clusterProfit)
-			if clusterProfit >= profitMax {
-				cluster.addTransaction(transaction)
-				return clusters
+			if clusterProfit > bestProfit {
+				bestCluster = cluster
+				bestProfit = clusterProfit
 			}
+		}
+		if bestProfit >= profitMax {
+			bestCluster.addTransaction(transaction)
+			return clusters
 		}
 	}
 
