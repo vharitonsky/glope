@@ -14,6 +14,7 @@ import (
 var (
 	input_file = flag.String("input", "", "Input file with transactions")
 	output_dir = flag.String("output", "", "A dir to store created clusters to")
+	repulsion  = flag.Float64("repulsion", 4.0, "Repulsion of transactions, the higher, the more precise")
 )
 
 type Cluster struct {
@@ -202,7 +203,7 @@ func main() {
 		}
 		transactions = append(transactions, &Transaction{instance: instance, items: items})
 	}
-	for _, cluster := range clusterize(transactions, 4.0) {
+	for _, cluster := range clusterize(transactions, *repulsion) {
 		file, err := os.Create(fmt.Sprintf("%s/cluster_%d.txt", *output_dir, cluster.id))
 		if err != nil {
 			log.Fatalf("Cannot open cluster file at [%s]: [%s]\n", *input_file, err)
