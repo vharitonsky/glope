@@ -22,27 +22,15 @@ type Cluster struct {
 	n         float64
 	w         float64
 	s         float64
-	instances []string
+	instances []*string
 	occ       map[string]int
 }
 
 type Transaction struct {
 	cluster  *Cluster
+	instanceId int
 	instance string
 	items    []string
-}
-
-func remove(array []string, item string) []string {
-	var modifiedArray []string
-	for i, arrayItem := range array {
-		if arrayItem != item {
-			modifiedArray = append(modifiedArray, arrayItem)
-		} else {
-			modifiedArray = append(modifiedArray, array[i+1:]...)
-			break
-		}
-	}
-	return modifiedArray
 }
 
 func getProfit(s, w, r float64) float64 {
@@ -50,7 +38,7 @@ func getProfit(s, w, r float64) float64 {
 }
 
 func newCluster(id int) *Cluster {
-	return &Cluster{id: id, n: 0, w: 0, s: 0, instances: make([]string, 0), occ: make(map[string]int, 0)}
+	return &Cluster{id: id, n: 0, w: 0, s: 0, instances: make([]*string, 0), occ: make(map[string]int, 0)}
 }
 
 func (c *Cluster) getProfit(items []string, r float64) float64 {
@@ -98,8 +86,9 @@ func (c *Cluster) addTransaction(trans *Transaction) {
 	}
 	c.w = float64(len(c.occ))
 	c.n++
-	c.instances = append(c.instances, trans.instance)
+	c.instances = append(c.instances, &trans.instance)
 	trans.cluster = c
+	trans.instanceId = len(c.instances) - 1
 }
 
 func (c *Cluster) removeTransaction(trans *Transaction) {
@@ -108,8 +97,8 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 	}
 	c.w = float64(len(c.occ))
 	c.n--
-	c.instances = remove(c.instances, trans.instance)
 	trans.cluster = nil
+	c.instances[trans.instanceId] = nil
 }
 
 func clusterize(data []*Transaction, repulsion float64) []*Cluster {
@@ -137,7 +126,7 @@ func clusterize(data []*Transaction, repulsion float64) []*Cluster {
 			break
 		}
 	}
-	log.Printf("Finished %v", clusters)
+	log.Printf("Finished")
 	return clusters
 }
 
@@ -185,14 +174,14 @@ func main() {
 	var transactions []*Transaction
 	for {
 		line, err := r.ReadString('\n')
-
 		if err != nil && line == "" {
 			if err == io.EOF {
 				break
 			}
 			log.Fatalf("Error when reading file [%s]: [%s]\n", *input_file, err)
 		}
-		instance := strings.TrimSuffix(line, "\n")
+		parts := strings.Split(strings.TrimSuffix(line, "\n"), ";")
+		instance := strings.Replace(parts[1], "\"", "", -1)
 		items := make([]string, 0)
 		visited := make(map[string]bool)
 		for _, item := range strings.Split(instance, " ") {
@@ -209,7 +198,9 @@ func main() {
 			log.Fatalf("Cannot open cluster file at [%s]: [%s]\n", *input_file, err)
 		}
 		for _, instance := range cluster.instances {
-			file.WriteString(fmt.Sprintf("%s\n", instance))
+			if instance != nil{
+				file.WriteString(fmt.Sprintf("%s\n", *instance))
+			}
 		}
 		file.Close()
 	}
