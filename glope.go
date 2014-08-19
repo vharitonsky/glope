@@ -106,7 +106,6 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 	c.s -= len(trans.Items)
 	c.w = len(c.occ)
 	c.n--
-	trans.cluster = nil
 	c.Transactions[trans.clusterPosition] = nil
 }
 
