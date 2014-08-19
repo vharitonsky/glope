@@ -8,9 +8,9 @@ import (
 
 type Cluster struct {
 	id           int
-	n            float64        //Number of transactions
-	w            float64        //Number of unique items
-	s            float64        //Total number of items
+	n            int            //Number of transactions
+	w            int            //Number of unique items
+	s            int            //Total number of items
 	occ          map[string]int //Item to item count map
 	Transactions []*Transaction
 }
@@ -22,29 +22,45 @@ type Transaction struct {
 	Items           []string
 }
 
-func getProfit(s, w, r float64) float64 {
-	return s / math.Pow(w, r)
+//Calculate a profit using this formula: number of items/(number of unique items ** repulsion)
+func getProfit(s, w int, r float64) float64 {
+	return float64(s) / math.Pow(float64(w), r)
 }
 
-func newCluster(id int) *Cluster {
-	return &Cluster{id: id, n: 0, w: 0, s: 0, Transactions: make([]*Transaction, 0), occ: make(map[string]int, 0)}
+func newCluster(id int, trans *Transaction) *Cluster {
+	items_len := len(trans.Items)
+	c := &Cluster{
+		id:           id,
+		occ:          make(map[string]int, items_len),
+		s:            items_len,
+		w:            items_len,
+		n:            1,
+		Transactions: []*Transaction{trans},
+	}
+	for _, item := range trans.Items {
+		c.occ[item] = 1
+	}
+	trans.cluster = c
+	return c
 }
 
 func (c *Cluster) String() string {
 	return fmt.Sprintf("[Cluster %d]", c.id)
 }
 
-func (c *Cluster) getProfit(items []string, r float64) float64 {
-	sNew := c.s + float64(len(items))
-	wNew := c.w
-	for _, item := range items {
-		if _, found := c.occ[item]; !found {
-			wNew++
-		}
-	}
+//Calculates a profit of adding transaction items to given cluster
+func (c *Cluster) getItemsProfit(items []string, r float64) float64 {
 	if c.n == 0 {
-		return getProfit(sNew, wNew, r)
+		s := len(items)
+		return getProfit(s, s, r)
 	} else {
+		sNew := c.s + len(items)
+		wNew := c.w
+		for _, item := range items {
+			if _, found := c.occ[item]; !found {
+				wNew++
+			}
+		}
 		profit := getProfit(c.s*c.n, c.w, r)
 		profitNew := getProfit(sNew*(c.n+1), wNew, r)
 		return profitNew - profit
@@ -58,7 +74,6 @@ func (c *Cluster) addItem(item string) {
 	} else {
 		c.occ[item] = val + 1
 	}
-	c.s++
 }
 
 func (c *Cluster) removeItem(item string) {
@@ -70,14 +85,14 @@ func (c *Cluster) removeItem(item string) {
 		delete(c.occ, item)
 	}
 	c.occ[item] -= 1
-	c.s--
 }
 
 func (c *Cluster) addTransaction(trans *Transaction) {
 	for _, item := range trans.Items {
 		c.addItem(item)
 	}
-	c.w = float64(len(c.occ))
+	c.s += len(trans.Items)
+	c.w = len(c.occ)
 	c.n++
 	trans.clusterPosition = len(c.Transactions)
 	c.Transactions = append(c.Transactions, trans)
@@ -88,7 +103,8 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 	for _, item := range trans.Items {
 		c.removeItem(item)
 	}
-	c.w = float64(len(c.occ))
+	c.s -= len(trans.Items)
+	c.w = len(c.occ)
 	c.n--
 	trans.cluster = nil
 	c.Transactions[trans.clusterPosition] = nil
@@ -144,15 +160,14 @@ func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 
 func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, repulsion float64) []*Cluster {
 	if len(clusters) > 0 {
-		tempS := float64(len(transaction.Items))
-		tempW := tempS
-		profitMax := getProfit(tempS, tempW, repulsion)
+		tempS := len(transaction.Items)
+		profitMax := getProfit(tempS, tempS, repulsion)
 
 		var bestCluster *Cluster
 		var bestProfit float64
 
 		for _, cluster := range clusters {
-			clusterProfit := cluster.getProfit(transaction.Items, repulsion)
+			clusterProfit := cluster.getItemsProfit(transaction.Items, repulsion)
 			if clusterProfit > bestProfit {
 				if clusterProfit > profitMax {
 					cluster.addTransaction(transaction)
@@ -168,8 +183,5 @@ func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, 
 			return clusters
 		}
 	}
-
-	cluster := newCluster(len(clusters))
-	cluster.addTransaction(transaction)
-	return append(clusters, cluster)
+	return append(clusters, newCluster(len(clusters), transaction))
 }
