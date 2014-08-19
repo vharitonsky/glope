@@ -61,9 +61,7 @@ func (c *Cluster) getItemsProfit(items []string, r float64) float64 {
 				wNew++
 			}
 		}
-		profit := getProfit(c.s*c.n, c.w, r)
-		profitNew := getProfit(sNew*(c.n+1), wNew, r)
-		return profitNew - profit
+		return getProfit(sNew*(c.n+1), wNew, r) - getProfit(c.s*c.n, c.w, r)
 	}
 }
 
