@@ -1,15 +1,16 @@
 package glope
 
 import (
+	"fmt"
 	"log"
 	"math"
 )
 
 type Cluster struct {
 	id           int
-	n            float64 //Number of transactions
-	w            float64 //Number of unique items
-	s            float64 //Total number of items
+	n            float64        //Number of transactions
+	w            float64        //Number of unique items
+	s            float64        //Total number of items
 	occ          map[string]int //Item to item count map
 	Transactions []*Transaction
 }
@@ -27,6 +28,10 @@ func getProfit(s, w, r float64) float64 {
 
 func newCluster(id int) *Cluster {
 	return &Cluster{id: id, n: 0, w: 0, s: 0, Transactions: make([]*Transaction, 0), occ: make(map[string]int, 0)}
+}
+
+func (c *Cluster) String() string {
+	return fmt.Sprintf("[Cluster %d]", c.id)
 }
 
 func (c *Cluster) getProfit(items []string, r float64) float64 {
@@ -89,10 +94,10 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 	c.Transactions[trans.clusterPosition] = nil
 }
 
-func (c *Cluster) clearNilTransactions(){
+func (c *Cluster) clearNilTransactions() {
 	nonNilTransactions := make([]*Transaction, 0)
-	for _, transaction := range(c.Transactions){
-		if transaction != nil{
+	for _, transaction := range c.Transactions {
+		if transaction != nil {
 			nonNilTransactions = append(nonNilTransactions, transaction)
 		}
 	}
@@ -110,8 +115,8 @@ func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 	}
 	log.Printf("Init finished, created %d clusters", len(clusters))
 	log.Print("Moving transactions to best clusters")
-	for i:=1;;i++{
-		log.Printf("move %d",i)
+	for i := 1; ; i++ {
+		log.Printf("move %d", i)
 		moved := false
 		for _, transaction := range data {
 			originalClusterId := transaction.cluster.id
@@ -127,8 +132,8 @@ func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 	}
 	log.Print("Finished, cleaning empty clusters")
 	notEmptyClusters := make([]*Cluster, 0)
-	for _, cluster := range clusters{
-		if cluster.n > 0{
+	for _, cluster := range clusters {
+		if cluster.n > 0 {
 			cluster.clearNilTransactions()
 			notEmptyClusters = append(notEmptyClusters, cluster)
 		}
@@ -149,12 +154,13 @@ func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, 
 		for _, cluster := range clusters {
 			clusterProfit := cluster.getProfit(transaction.Items, repulsion)
 			if clusterProfit > bestProfit {
-				bestCluster = cluster
-				bestProfit = clusterProfit
-			}
-			if clusterProfit > profitMax{
-				cluster.addTransaction(transaction)
-				return clusters
+				if clusterProfit > profitMax {
+					cluster.addTransaction(transaction)
+					return clusters
+				} else {
+					bestCluster = cluster
+					bestProfit = clusterProfit
+				}
 			}
 		}
 		if bestProfit >= profitMax {
