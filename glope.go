@@ -2,7 +2,6 @@ package glope
 
 import (
 	"fmt"
-	"log"
 	"math"
 )
 
@@ -65,6 +64,7 @@ func (c *Cluster) getItemsProfit(items []string, r float64) float64 {
 	}
 }
 
+//Adds an item of a transaction to the cluster
 func (c *Cluster) addItem(item string) {
 	val, found := c.occ[item]
 	if !found {
@@ -74,6 +74,7 @@ func (c *Cluster) addItem(item string) {
 	}
 }
 
+//Removes an item of a transaction from the cluster
 func (c *Cluster) removeItem(item string) {
 	val, found := c.occ[item]
 	if !found {
@@ -117,19 +118,16 @@ func (c *Cluster) clearNilTransactions() {
 	c.Transactions = nonNilTransactions
 }
 
+//Clusterizes given transactions
 func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 	if repulsion == 0 {
 		repulsion = 4.0 // default value
 	}
 	var clusters []*Cluster
-	log.Print("Initializing clusters")
 	for _, transaction := range data {
 		clusters = addTransactionToBestCluster(clusters, transaction, repulsion)
 	}
-	log.Printf("Init finished, created %d clusters", len(clusters))
-	log.Print("Moving transactions to best clusters")
-	for i := 1; ; i++ {
-		log.Printf("move %d", i)
+	for {
 		moved := false
 		for _, transaction := range data {
 			originalClusterId := transaction.cluster.id
@@ -143,7 +141,6 @@ func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 			break
 		}
 	}
-	log.Print("Finished, cleaning empty clusters")
 	notEmptyClusters := make([]*Cluster, 0)
 	for _, cluster := range clusters {
 		if cluster.n > 0 {
@@ -151,7 +148,6 @@ func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 			notEmptyClusters = append(notEmptyClusters, cluster)
 		}
 	}
-	log.Printf("Cleaning finished, returning %d clusters", len(notEmptyClusters))
 	return notEmptyClusters
 }
 
