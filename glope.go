@@ -152,29 +152,27 @@ func Clusterize(data []*Transaction, repulsion float64) []*Cluster {
 }
 
 func addTransactionToBestCluster(clusters []*Cluster, transaction *Transaction, repulsion float64) []*Cluster {
-	if len(clusters) > 0 {
-		tempS := len(transaction.Items)
-		profitMax := getProfit(tempS, tempS, repulsion)
+	tempS := len(transaction.Items)
+	profitMax := getProfit(tempS, tempS, repulsion)
 
-		var bestCluster *Cluster
-		var bestProfit float64
+	var bestCluster *Cluster
+	var bestProfit float64
 
-		for _, cluster := range clusters {
-			clusterProfit := cluster.getItemsProfit(transaction.Items, repulsion)
-			if clusterProfit > bestProfit {
-				if clusterProfit > profitMax {
-					cluster.addTransaction(transaction)
-					return clusters
-				} else {
-					bestCluster = cluster
-					bestProfit = clusterProfit
-				}
+	for _, cluster := range clusters {
+		clusterProfit := cluster.getItemsProfit(transaction.Items, repulsion)
+		if clusterProfit > bestProfit {
+			if clusterProfit > profitMax {
+				cluster.addTransaction(transaction)
+				return clusters
+			} else {
+				bestCluster = cluster
+				bestProfit = clusterProfit
 			}
 		}
-		if bestProfit >= profitMax {
-			bestCluster.addTransaction(transaction)
-			return clusters
-		}
+	}
+	if bestProfit >= profitMax {
+		bestCluster.addTransaction(transaction)
+		return clusters
 	}
 	return append(clusters, newCluster(len(clusters), transaction))
 }
