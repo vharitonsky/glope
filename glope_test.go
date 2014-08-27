@@ -1,9 +1,9 @@
 package glope
 
-import(
+import (
 	"testing"
 )
 
-func TestClusterStruct(t *testing.T){
+func TestClusterStruct(t *testing.T) {
 	//stub
 }
