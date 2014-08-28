@@ -6,7 +6,13 @@ import (
 )
 
 func TestClusterStruct(t *testing.T) {
-	//stub
+	trans := &Transaction{Instance: "test", Items: []string{"test", "transaction"}}
+	trans2 := &Transaction{Instance: "test2", Items: []string{"test2", "transaction2"}}
+	cluster := newCluster(0, trans)
+	cluster.addItem("test item")
+	cluster.removeItem("test item")
+	cluster.addTransaction(trans2)
+	cluster.getItemsProfit([]string{"test2", "transaction"}, 4.0)
 }
 
 func TestGetProfit(t *testing.T) {
