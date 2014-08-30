@@ -82,8 +82,21 @@ func (c *Cluster) removeItem(item string) {
 	}
 	if val == 1 {
 		delete(c.occ, item)
+	} else {
+		c.occ[item] -= 1
 	}
-	c.occ[item] -= 1
+}
+
+func (c *Cluster) hasItem(item string) bool {
+	_, found := c.occ[item]
+	return found
+}
+
+func (c *Cluster) hasTransaction(trans *Transaction) bool {
+	if trans.cluster != nil && trans.cluster.id == c.id {
+		return true
+	}
+	return false
 }
 
 func (c *Cluster) addTransaction(trans *Transaction) {
@@ -106,6 +119,7 @@ func (c *Cluster) removeTransaction(trans *Transaction) {
 	c.w = len(c.occ)
 	c.n--
 	c.Transactions[trans.clusterPosition] = nil
+	trans.cluster = nil
 }
 
 func (c *Cluster) clearNilTransactions() {
