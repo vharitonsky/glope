@@ -54,12 +54,12 @@ func TestGetProfit(t *testing.T) {
 	}
 }
 
-func TestAddTransactionToBestCluster(t *testing.T){
-        trans := &Transaction{Instance: "test", Items: []string{"test", "transaction"}}
-        cluster := newCluster(0, trans)
-        cluster.removeTransaction(trans)
-        addTransactionToBestCluster([]*Cluster{cluster}, trans, 4.0)
-        if !cluster.hasTransaction(trans) {
+func TestAddTransactionToBestCluster(t *testing.T) {
+	trans := &Transaction{Instance: "test", Items: []string{"test", "transaction"}}
+	cluster := newCluster(0, trans)
+	cluster.removeTransaction(trans)
+	addTransactionToBestCluster([]*Cluster{cluster}, trans, 4.0)
+	if !cluster.hasTransaction(trans) {
 		t.Error("Transaction was supposed to be added to an empty cluster")
 		t.FailNow()
 	}
