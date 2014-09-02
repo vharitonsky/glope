@@ -64,3 +64,16 @@ func TestAddTransactionToBestCluster(t *testing.T) {
 		t.FailNow()
 	}
 }
+
+func TestClusterize(t *testing.T) {
+	transactions := []*Transaction{
+		{Instance: "transaction1", Items: []string{"test", "transaction"}},
+		{Instance: "transaction2", Items: []string{"test", "transaction"}},
+		{Instance: "transaction3", Items: []string{"test", "transaction"}},
+	}
+	clusters := Clusterize(transactions, 4.0)
+	if len(clusters) != 1 {
+		t.Error("There should be only one cluster")
+		t.FailNow()
+	}
+}
