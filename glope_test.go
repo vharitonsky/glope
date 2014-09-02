@@ -76,4 +76,13 @@ func TestClusterize(t *testing.T) {
 		t.Error("There should be only one cluster")
 		t.FailNow()
 	}
+	transactions = []*Transaction{
+		{Instance: "transaction1", Items: []string{"itemA"}},
+		{Instance: "transaction2", Items: []string{"ItemB"}},
+	}
+	clusters = Clusterize(transactions, 4.0)
+	if len(clusters) != 2 {
+		t.Error("There should be only two clusters")
+		t.FailNow()
+	}
 }
