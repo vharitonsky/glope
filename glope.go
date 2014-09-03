@@ -66,24 +66,14 @@ func (c *Cluster) getItemsProfit(items []string, r float64) float64 {
 
 //Adds an item of a transaction to the cluster
 func (c *Cluster) addItem(item string) {
-	val, found := c.occ[item]
-	if !found {
-		c.occ[item] = 1
-	} else {
-		c.occ[item] = val + 1
-	}
+	c.occ[item] += 1
 }
 
 //Removes an item of a transaction from the cluster
 func (c *Cluster) removeItem(item string) {
-	val, found := c.occ[item]
-	if !found {
-		return
-	}
-	if val == 1 {
+	c.occ[item] -= 1
+	if c.occ[item] <= 0 {
 		delete(c.occ, item)
-	} else {
-		c.occ[item] -= 1
 	}
 }
 
@@ -93,10 +83,7 @@ func (c *Cluster) hasItem(item string) bool {
 }
 
 func (c *Cluster) hasTransaction(trans *Transaction) bool {
-	if trans.cluster != nil && trans.cluster.id == c.id {
-		return true
-	}
-	return false
+	return trans.cluster == c
 }
 
 func (c *Cluster) addTransaction(trans *Transaction) {
