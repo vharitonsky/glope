@@ -6,29 +6,25 @@ import (
 )
 
 func main() {
-	transaction1 := glope.Transaction{
-		//You can store anything here, an id or name to identify your transaction
-		Instance: "Brandname1 Productname1 Series1 red",
-		//Items is a series of unique tokens inside a transaction
-		Items: []string{"Brandname1", "Productname1", "Series1", "red"},
-	}
-	transaction2 := glope.Transaction{
-		Instance: "Brandname1 Productname1 Series1 blue",
-		Items:    []string{"Brandname1", "Productname1", "Seris1", "blue"},
-	}
-	transaction3 := glope.Transaction{
-		Instance: "Brandname1 Productname1 Series1 refurbished",
-		Items:    []string{"Brandname1", "Productname1", "Series1", "refurbished"},
-	}
-	transaction4 := glope.Transaction{
-		Instance: "Brandname2 Productname2 Series2 black",
-		Items:    []string{"Brandname2", "Productname2", "Series2", "black"},
-	}
 	transactions := []*glope.Transaction{
-		&transaction1,
-		&transaction2,
-		&transaction3,
-		&transaction4,
+		{
+			//You can store anything here, an id or name to identify your transaction
+			Instance: "Brandname1 Productname1 Series1 red",
+			//Items is a series of unique tokens inside a transaction
+			Items: []string{"Brandname1", "Productname1", "Series1", "red"},
+		},
+		{
+			Instance: "Brandname1 Productname1 Series1 refurbished",
+			Items:    []string{"Brandname1", "Productname1", "Series1", "refurbished"},
+		},
+		{
+			Instance: "Brandname1 Productname1 Series1 blue",
+			Items:    []string{"Brandname1", "Productname1", "Seris1", "blue"},
+		},
+		{
+			Instance: "Brandname2 Productname2 Series2 black",
+			Items:    []string{"Brandname2", "Productname2", "Series2", "black"},
+		},
 	}
 	/*
 		Clusterize takes two parameters: list of pointers to transactions and repulsion.
