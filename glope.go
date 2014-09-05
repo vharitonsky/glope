@@ -40,6 +40,7 @@ func newCluster(id int, trans *Transaction) *Cluster {
 		c.occ[item] = 1
 	}
 	trans.cluster = c
+	trans.clusterPosition = 0
 	return c
 }
 
